@@ -1,0 +1,6 @@
+{
+  "name": "RCCG House of Glory Donation Portal",
+  "description": "A modern, elegant, and mobile-responsive donation page and admin management portal for RCCG House of Glory, featuring instant click-to-copy accounts, customizable details, and logo upload.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
