@@ -1,8 +1,6 @@
 import { DonationAccount } from '../types';
-import { Copy, CreditCard, Coins, DollarSign, Building, Sparkles, Check, QrCode } from 'lucide-react';
+import { Copy, CreditCard, Coins, DollarSign, Building, Sparkles, Check } from 'lucide-react';
 import React, { useState } from 'react';
-import QRCode from 'qrcode';
-import { motion, AnimatePresence } from 'motion/react';
 
 interface DonationViewProps {
   accounts: DonationAccount[];
@@ -12,33 +10,6 @@ interface DonationViewProps {
 export default function DonationView({ accounts, onCopyText }: DonationViewProps) {
   // Store temporarily copied state per field to show inline success animations
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
-  
-  // Dynamic QR Code visibility and lazy loading URL states
-  const [expandedQrId, setExpandedQrId] = useState<string | null>(null);
-  const [qrUrls, setQrUrls] = useState<Record<string, string>>({});
-
-  const toggleQrCode = async (id: string, textToEncode: string) => {
-    if (expandedQrId === id) {
-      setExpandedQrId(null);
-    } else {
-      setExpandedQrId(id);
-      if (!qrUrls[id]) {
-        try {
-          const url = await QRCode.toDataURL(textToEncode, {
-            margin: 2,
-            width: 300,
-            color: {
-              dark: '#0B2D5C',
-              light: '#FFFFFF'
-            }
-          });
-          setQrUrls(prev => ({ ...prev, [id]: url }));
-        } catch (err) {
-          console.error("Error generating QR code", err);
-        }
-      }
-    }
-  };
 
   const handleCopy = (value: string, uniqueKey: string) => {
     onCopyText(value);
@@ -245,57 +216,6 @@ export default function DonationView({ accounts, onCopyText }: DonationViewProps
                         </>
                       )}
                     </button>
-                  </div>
-
-                  {/* Dynamic QR Code Toggle Button */}
-                  <div className="pt-3 border-t border-gray-100 flex flex-col gap-2" id={`qr-wrapper-${account.id}`}>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleQrCode(
-                          account.id,
-                          `RCCG HOUSE OF GLORY\n-----------------------\nCategory: ${account.title}\nBank: ${account.bankName}\nAccount: ${account.accountNumber}\nName: ${account.accountName}`
-                        );
-                      }}
-                      className="w-full flex items-center justify-center gap-2 py-2.5 bg-[#0B2D5C]/5 hover:bg-[#0B2D5C] group-hover:bg-[#0B2D5C]/10 hover:text-white border border-[#0B2D5C]/10 text-[#0B2D5C] rounded-xl text-xs font-semibold cursor-pointer active:scale-[0.98] transition-all duration-200"
-                      id={`btn-qr-${account.id}`}
-                    >
-                      <QrCode className="w-4 h-4 text-[#D4AF37]" />
-                      <span>
-                        {expandedQrId === account.id ? 'Hide QR Code' : 'Show QR Code for Scanning'}
-                      </span>
-                    </button>
-
-                    <AnimatePresence>
-                      {expandedQrId === account.id && (
-                        <motion.div
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: 'auto' }}
-                          exit={{ opacity: 0, height: 0 }}
-                          transition={{ duration: 0.25 }}
-                          className="overflow-hidden flex flex-col items-center py-2"
-                          id={`qr-panel-${account.id}`}
-                        >
-                          <div className="p-4 bg-white border border-gray-100 rounded-2xl shadow-inner flex flex-col items-center max-w-[240px] mx-auto w-full">
-                            {qrUrls[account.id] ? (
-                              <img
-                                src={qrUrls[account.id]}
-                                alt={`QR Code for ${account.title}`}
-                                className="w-40 h-40 object-contain selection:bg-transparent"
-                                referrerPolicy="no-referrer"
-                              />
-                            ) : (
-                              <div className="w-40 h-40 flex items-center justify-center text-gray-400 font-medium text-xs">
-                                Generating dynamic QR...
-                              </div>
-                            )}
-                            <span className="text-[9.5px] text-gray-400 font-semibold text-center leading-normal mt-2.5 select-none uppercase tracking-wider">
-                              Scan with phone camera <br /> to copy instant info
-                            </span>
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
                   </div>
                 </div>
 
