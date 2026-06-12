@@ -12,10 +12,15 @@ app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const DATA_FILE = path.join(DATA_DIR, "portal_db.json");
+const TMP_DATA_FILE = "/tmp/portal_db.json";
 
-// Ensure data folder exists
-if (!fs.existsSync(DATA_DIR)) {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
+// Ensure data folder exists if possible
+try {
+  if (!fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+  }
+} catch (e) {
+  console.warn("Could not create local data folder at process.cwd(), falling back to dynamic /tmp directory", e);
 }
 
 // Initial defaults
@@ -73,14 +78,26 @@ interface PortalData {
 
 // Helper to load current state
 const loadPortalData = (): PortalData => {
+  // Try reading from default local directory
   try {
     if (fs.existsSync(DATA_FILE)) {
       const content = fs.readFileSync(DATA_FILE, "utf-8");
       return JSON.parse(content);
     }
   } catch (err) {
-    console.error("Error loading portal data from file, fallback to defaults", err);
+    console.warn("Could not read portal data from process.cwd() data directory, checking /tmp...", err);
   }
+
+  // Fallback to checking /tmp/portal_db.json
+  try {
+    if (fs.existsSync(TMP_DATA_FILE)) {
+      const content = fs.readFileSync(TMP_DATA_FILE, "utf-8");
+      return JSON.parse(content);
+    }
+  } catch (err) {
+    console.error("Error loading portal data from fallback /tmp path", err);
+  }
+
   return {
     accounts: DEFAULT_ACCOUNTS,
     branding: DEFAULT_BRANDING,
@@ -90,13 +107,25 @@ const loadPortalData = (): PortalData => {
 
 // Helper to save current state
 const savePortalData = (data: PortalData) => {
+  let saveSuccess = false;
+  
+  // Try writing to standard local workspace data file
   try {
     fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), "utf-8");
-    return true;
+    saveSuccess = true;
   } catch (err) {
-    console.error("Error writing portal data to file", err);
-    return false;
+    console.warn("Failed saving standard local workspace folder file (environment may be read-only). Falling back to /tmp...", err);
   }
+
+  // Also write to block-safe /tmp folder as robust redundancy
+  try {
+    fs.writeFileSync(TMP_DATA_FILE, JSON.stringify(data, null, 2), "utf-8");
+    saveSuccess = true;
+  } catch (err) {
+    console.error("Failed saving fallback /tmp database file", err);
+  }
+
+  return saveSuccess;
 };
 
 // API: Get unified portal configurations
