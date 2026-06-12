@@ -1,12 +1,14 @@
 import { Gift, Sliders, Church } from 'lucide-react';
+import { ChurchBranding } from '../types';
 
 interface HeaderProps {
   currentView: 'donation' | 'admin';
   onViewChange: (view: 'donation' | 'admin') => void;
   logoUrl: string | null;
+  branding: ChurchBranding;
 }
 
-export default function Header({ currentView, onViewChange, logoUrl }: HeaderProps) {
+export default function Header({ currentView, onViewChange, logoUrl, branding }: HeaderProps) {
   return (
     <header 
       className="bg-white border-b border-gray-100 sticky top-0 z-40 shadow-sm"
@@ -19,7 +21,7 @@ export default function Header({ currentView, onViewChange, logoUrl }: HeaderPro
             <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-[#D4AF37] flex items-center justify-center bg-gray-50 uppercase shadow-inner">
               <img 
                 src={logoUrl} 
-                alt="RCCG House of Glory" 
+                alt={branding.churchName}
                 className="w-full h-full object-cover"
                 referrerPolicy="no-referrer"
               />
@@ -41,10 +43,10 @@ export default function Header({ currentView, onViewChange, logoUrl }: HeaderPro
               className="text-lg md:text-xl font-bold tracking-wider uppercase transition-colors"
               style={{ color: '#0B2D5C' }}
             >
-              RCCG House Of Glory
+              {branding.churchName}
             </h1>
             <p className="text-[10px] md:text-xs font-medium uppercase tracking-widest text-gray-400">
-              International Worship Center
+              {branding.churchSubtitle}
             </p>
           </div>
         </div>

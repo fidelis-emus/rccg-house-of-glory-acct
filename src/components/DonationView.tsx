@@ -1,13 +1,14 @@
-import { DonationAccount } from '../types';
+import { DonationAccount, ChurchBranding } from '../types';
 import { Copy, CreditCard, Coins, DollarSign, Building, Sparkles, Check } from 'lucide-react';
 import React, { useState } from 'react';
 
 interface DonationViewProps {
   accounts: DonationAccount[];
+  branding: ChurchBranding;
   onCopyText: (text: string) => void;
 }
 
-export default function DonationView({ accounts, onCopyText }: DonationViewProps) {
+export default function DonationView({ accounts, branding, onCopyText }: DonationViewProps) {
   // Store temporarily copied state per field to show inline success animations
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
@@ -42,10 +43,10 @@ export default function DonationView({ accounts, onCopyText }: DonationViewProps
           className="text-4xl md:text-5xl font-extrabold tracking-tight mb-4 select-none"
           style={{ color: '#0B2D5C' }}
         >
-          Fuel the Vision.
+          {branding.heroTitle}
         </h2>
         <p className="text-gray-600 text-sm md:text-base leading-relaxed font-light mb-6 px-2">
-          "Your generosity powers every life changed, every worship experience, and every community reached. Thank you for investing in the future."
+          {branding.heroSubheader}
         </p>
         
         {/* Helper copy indicator */}

@@ -13,3 +13,14 @@ export interface ToastMessage {
   copiedValue: string;
   type: 'success' | 'info';
 }
+
+export interface ChurchBranding {
+  churchName: string;
+  churchSubtitle: string;
+  heroTitle: string;
+  heroSubheader: string;
+  footerScripture: string;
+  footerScriptureRef: string;
+  footerThankYou: string;
+  copyrightText: string;
+}

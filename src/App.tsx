@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { DonationAccount, ToastMessage } from './types';
+import { DonationAccount, ToastMessage, ChurchBranding } from './types';
 import Header from './components/Header';
 import DonationView from './components/DonationView';
 import AdminView from './components/AdminView';
@@ -41,6 +41,17 @@ const DEFAULT_ACCOUNTS: DonationAccount[] = [
   }
 ];
 
+const DEFAULT_BRANDING: ChurchBranding = {
+  churchName: 'RCCG House Of Glory',
+  churchSubtitle: 'International Worship Center',
+  heroTitle: 'Fuel the Vision.',
+  heroSubheader: 'Your generosity powers every life changed, every worship experience, and every community reached. Thank you for investing in the future.',
+  footerScripture: 'Freely you have received; freely give.',
+  footerScriptureRef: '— Matthew 10:8',
+  footerThankYou: 'Thank you for partnering with God\'s work. Your resource is directly used in expanding the body of Christ, teaching truth, and caring for the vulnerable.',
+  copyrightText: '© 2026 RCCG House of Glory. All Rights Reserved.'
+};
+
 export default function App() {
   // On App Mount: Read initial view based on URL Hash or search params
   const [currentView, setCurrentView] = useState<'donation' | 'admin'>(() => {
@@ -59,6 +70,7 @@ export default function App() {
 
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [accounts, setAccounts] = useState<DonationAccount[]>([]);
+  const [branding, setBranding] = useState<ChurchBranding>(DEFAULT_BRANDING);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   // Synchronize route changes when back/forward browser arrows or links are used
@@ -120,9 +132,19 @@ export default function App() {
         setAccounts(DEFAULT_ACCOUNTS);
         localStorage.setItem('rccg_donation_accounts', JSON.stringify(DEFAULT_ACCOUNTS));
       }
+
+      // 3. Load Church Branding Customizations
+      const storedBranding = localStorage.getItem('rccg_church_branding');
+      if (storedBranding) {
+        setBranding({ ...DEFAULT_BRANDING, ...JSON.parse(storedBranding) });
+      } else {
+        setBranding(DEFAULT_BRANDING);
+        localStorage.setItem('rccg_church_branding', JSON.stringify(DEFAULT_BRANDING));
+      }
     } catch (e) {
-      console.warn('LocalStorage error reading configs, loading default accounts: ', e);
+      console.warn('LocalStorage error reading configs, loading default values: ', e);
       setAccounts(DEFAULT_ACCOUNTS);
+      setBranding(DEFAULT_BRANDING);
     }
   }, []);
 
@@ -133,6 +155,15 @@ export default function App() {
       localStorage.setItem('rccg_donation_accounts', JSON.stringify(newAccounts));
     } catch (err) {
       console.error('Failed to write accounts details to local storage', err);
+    }
+  };
+
+  const handleUpdateBranding = (newBranding: ChurchBranding) => {
+    setBranding(newBranding);
+    try {
+      localStorage.setItem('rccg_church_branding', JSON.stringify(newBranding));
+    } catch (err) {
+      console.error('Failed to write branding details to local storage', err);
     }
   };
 
@@ -175,9 +206,11 @@ export default function App() {
   const handleResetAccounts = () => {
     setLogoUrl(null);
     setAccounts(DEFAULT_ACCOUNTS);
+    setBranding(DEFAULT_BRANDING);
     try {
       localStorage.removeItem('rccg_church_logo');
       localStorage.setItem('rccg_donation_accounts', JSON.stringify(DEFAULT_ACCOUNTS));
+      localStorage.setItem('rccg_church_branding', JSON.stringify(DEFAULT_BRANDING));
     } catch (err) {
       console.error('Failed resetting to local storage', err);
     }
@@ -263,6 +296,7 @@ export default function App() {
         currentView={currentView}
         onViewChange={handleViewChange}
         logoUrl={logoUrl}
+        branding={branding}
       />
 
       {/* Main Content Area */}
@@ -270,12 +304,15 @@ export default function App() {
         {currentView === 'donation' ? (
           <DonationView 
             accounts={accounts}
+            branding={branding}
             onCopyText={handleCopyText}
           />
         ) : (
           <AdminView 
             accounts={accounts}
             logoUrl={logoUrl}
+            branding={branding}
+            onUpdateBranding={handleUpdateBranding}
             onAddAccount={handleAddAccount}
             onUpdateAccount={handleUpdateAccount}
             onDeleteAccount={handleDeleteAccount}
@@ -302,23 +339,23 @@ export default function App() {
           </div>
 
           <h3 
-            className="text-xl md:text-2xl font-extrabold tracking-widest uppercase mb-3 decoration-[#D4AF37] decoration-2"
+            className="text-xl md:text-2xl font-extrabold tracking-widest uppercase mb-3 decoration-[#D4AF37] decoration-2 text-center"
           >
-            RCCG House Of Glory
+            {branding.churchName}
           </h3>
 
-          <p className="font-serif italic text-sm md:text-base text-amber-100/90 max-w-lg mb-4 leading-relaxed tracking-wide font-light">
-            "Freely you have received; freely give." <br />
-            <span className="text-xs opacity-70 font-sans tracking-widest uppercase mt-1 inline-block">— Matthew 10:8</span>
+          <p className="font-serif italic text-sm md:text-base text-amber-100/90 max-w-lg mb-4 text-center leading-relaxed tracking-wide font-light">
+            {branding.footerScripture} <br />
+            <span className="text-xs opacity-70 font-sans tracking-widest uppercase mt-1 inline-block">{branding.footerScriptureRef}</span>
           </p>
 
-          <p className="text-xs text-white/70 font-medium tracking-wide max-w-md border-t border-white/10 pt-4 mb-6">
-            Thank you for partnering with God's work. Your resource is directly used in expanding the body of Christ, teaching truth, and caring for the vulnerable.
+          <p className="text-xs text-white/70 font-medium tracking-wide max-w-md border-t border-white/10 pt-4 mb-6 text-center">
+            {branding.footerThankYou}
           </p>
 
           {/* Copyright Section */}
           <div className="text-[10px] text-zinc-400 font-medium flex flex-col sm:flex-row items-center gap-2 sm:gap-4 select-none">
-            <span>&copy; 2026 RCCG House of Glory. All Rights Reserved.</span>
+            <span>{branding.copyrightText}</span>
             <div className="hidden sm:inline w-1 h-3 bg-zinc-600 rounded" />
             <span className="flex items-center gap-1 hover:text-[#D4AF37] transition cursor-pointer">
               <Globe className="w-3 h-3 text-[#D4AF37]" /> International Missions Network

@@ -1,13 +1,15 @@
-import React, { useState, useRef } from 'react';
-import { DonationAccount } from '../types';
+import React, { useState, useRef, useEffect } from 'react';
+import { DonationAccount, ChurchBranding } from '../types';
 import { 
   Plus, Edit2, Trash2, Upload, RefreshCw, Save, X, Info, HelpCircle, FileImage, 
-  CreditCard, Sparkles, Building, Coins, ShieldCheck
+  CreditCard, Sparkles, Building, Coins, ShieldCheck, Check, Paintbrush
 } from 'lucide-react';
 
 interface AdminViewProps {
   accounts: DonationAccount[];
   logoUrl: string | null;
+  branding: ChurchBranding;
+  onUpdateBranding: (branding: ChurchBranding) => void;
   onAddAccount: (account: Omit<DonationAccount, 'id'>) => void;
   onUpdateAccount: (account: DonationAccount) => void;
   onDeleteAccount: (id: string) => void;
@@ -19,6 +21,8 @@ interface AdminViewProps {
 export default function AdminView({
   accounts,
   logoUrl,
+  branding,
+  onUpdateBranding,
   onAddAccount,
   onUpdateAccount,
   onDeleteAccount,
@@ -31,6 +35,47 @@ export default function AdminView({
   const [newBank, setNewBank] = useState('');
   const [newNumber, setNewNumber] = useState('');
   const [newName, setNewName] = useState('RCCG HOUSE OF GLORY');
+
+  // Website branding configuration states
+  const [editedChurchName, setEditedChurchName] = useState(branding.churchName);
+  const [editedSubtitle, setEditedSubtitle] = useState(branding.churchSubtitle);
+  const [editedHeroTitle, setEditedHeroTitle] = useState(branding.heroTitle);
+  const [editedHeroSub, setEditedHeroSub] = useState(branding.heroSubheader);
+  const [editedScripture, setEditedScripture] = useState(branding.footerScripture);
+  const [editedScriptureRef, setEditedScriptureRef] = useState(branding.footerScriptureRef);
+  const [editedThankYou, setEditedThankYou] = useState(branding.footerThankYou);
+  const [editedCopyright, setEditedCopyright] = useState(branding.copyrightText);
+  const [isBrandingSaved, setIsBrandingSaved] = useState(false);
+
+  // Synchronize local edit values when master branding configuration changes (e.g. from a reset operation)
+  useEffect(() => {
+    setEditedChurchName(branding.churchName);
+    setEditedSubtitle(branding.churchSubtitle);
+    setEditedHeroTitle(branding.heroTitle);
+    setEditedHeroSub(branding.heroSubheader);
+    setEditedScripture(branding.footerScripture);
+    setEditedScriptureRef(branding.footerScriptureRef);
+    setEditedThankYou(branding.footerThankYou);
+    setEditedCopyright(branding.copyrightText);
+  }, [branding]);
+
+  const handleSaveBranding = (e: React.FormEvent) => {
+    e.preventDefault();
+    onUpdateBranding({
+      churchName: editedChurchName,
+      churchSubtitle: editedSubtitle,
+      heroTitle: editedHeroTitle,
+      heroSubheader: editedHeroSub,
+      footerScripture: editedScripture,
+      footerScriptureRef: editedScriptureRef,
+      footerThankYou: editedThankYou,
+      copyrightText: editedCopyright
+    });
+    setIsBrandingSaved(true);
+    setTimeout(() => {
+      setIsBrandingSaved(false);
+    }, 3000);
+  };
   
   // Quick-fill templates for titles
   const quickTitles = [
@@ -265,6 +310,147 @@ export default function AdminView({
                 Remove Logo
               </button>
             )}
+          </div>
+
+          {/* Header & Footer Customization Card */}
+          <div className="bg-white rounded-3xl border border-gray-100 shadow-md p-6" id="branding-customizer-card">
+            <h3 className="font-bold text-sm uppercase tracking-wider text-zinc-850 mb-4 flex items-center gap-2">
+              <Paintbrush className="w-4 h-4 text-[#D4AF37]" strokeWidth={2.5} />
+              Header & Footer Styling
+            </h3>
+
+            <p className="text-[11px] text-zinc-500 mb-4 leading-relaxed font-semibold">
+              Customize titles, vision statements, scripture verses, and footer descriptions dynamically.
+            </p>
+
+            <form onSubmit={handleSaveBranding} className="space-y-4">
+              {/* Church Name */}
+              <div className="flex flex-col gap-1 text-left">
+                <label className="text-[10px] font-extrabold text-zinc-400 uppercase tracking-wider select-none">Church Name (Header & Footer)</label>
+                <input 
+                  type="text" 
+                  value={editedChurchName}
+                  onChange={(e) => setEditedChurchName(e.target.value)}
+                  className="w-full px-3 py-2 bg-zinc-50 border border-gray-100 rounded-xl text-xs font-semibold text-zinc-800 focus:outline-none focus:ring-1 focus:ring-[#0B2D5C]"
+                  placeholder="e.g. RCCG House Of Glory"
+                  id="brand-name-input"
+                />
+              </div>
+
+              {/* Church Subtitle / Tagline */}
+              <div className="flex flex-col gap-1 text-left">
+                <label className="text-[10px] font-extrabold text-zinc-400 uppercase tracking-wider select-none">Church Subtitle/Tagline</label>
+                <input 
+                  type="text" 
+                  value={editedSubtitle}
+                  onChange={(e) => setEditedSubtitle(e.target.value)}
+                  className="w-full px-3 py-2 bg-zinc-50 border border-gray-100 rounded-xl text-xs font-semibold text-zinc-800 focus:outline-none focus:ring-1 focus:ring-[#0B2D5C]"
+                  placeholder="e.g. International Worship Center"
+                  id="brand-subtitle-input"
+                />
+              </div>
+
+              {/* Hero Section Call to Action */}
+              <div className="flex flex-col gap-1 text-left">
+                <label className="text-[10px] font-extrabold text-[#0B2D5C] uppercase tracking-wider select-none">Donation Home Title</label>
+                <input 
+                  type="text" 
+                  value={editedHeroTitle}
+                  onChange={(e) => setEditedHeroTitle(e.target.value)}
+                  className="w-full px-3 py-2 bg-zinc-50 border border-gray-100 rounded-xl text-xs font-semibold text-zinc-850 focus:outline-none focus:ring-1 focus:ring-[#0B2D5C]"
+                  placeholder="e.g. Fuel the Vision."
+                  id="brand-herotitle-input"
+                />
+              </div>
+
+              {/* Hero Description paragraph */}
+              <div className="flex flex-col gap-1 text-left">
+                <label className="text-[10px] font-extrabold text-zinc-400 uppercase tracking-wider select-none">Donation Home Description</label>
+                <textarea 
+                  rows={3}
+                  value={editedHeroSub}
+                  onChange={(e) => setEditedHeroSub(e.target.value)}
+                  className="w-full px-3 py-2 bg-zinc-50 border border-gray-100 rounded-xl text-xs font-semibold text-zinc-700 focus:outline-none focus:ring-1 focus:ring-[#0B2D5C] resize-y"
+                  placeholder="Insert inspiring call-to-giving text..."
+                  id="brand-herosub-input"
+                />
+              </div>
+
+              {/* Footer Scripture */}
+              <div className="flex flex-col gap-1 text-left">
+                <label className="text-[10px] font-extrabold text-[#D4AF37] uppercase tracking-wider select-none">Footer Scripture / Quote</label>
+                <input 
+                  type="text" 
+                  value={editedScripture}
+                  onChange={(e) => setEditedScripture(e.target.value)}
+                  className="w-full px-3 py-2 bg-zinc-50 border border-gray-100 rounded-xl text-xs font-semibold italic text-zinc-800 focus:outline-none focus:ring-1 focus:ring-[#0B2D5C]"
+                  placeholder="e.g. 'Freely you have received; freely give.'"
+                  id="brand-scripture-input"
+                />
+              </div>
+
+              {/* Footer Scripture Reference */}
+              <div className="flex flex-col gap-1 text-left">
+                <label className="text-[10px] font-extrabold text-zinc-400 uppercase tracking-wider select-none">Scripture Reference</label>
+                <input 
+                  type="text" 
+                  value={editedScriptureRef}
+                  onChange={(e) => setEditedScriptureRef(e.target.value)}
+                  className="w-full px-3 py-2 bg-zinc-50 border border-gray-100 rounded-xl text-xs font-semibold text-zinc-805 focus:outline-none focus:ring-1 focus:ring-[#0B2D5C]"
+                  placeholder="e.g. — Matthew 10:8"
+                  id="brand-scriptureref-input"
+                />
+              </div>
+
+              {/* Footer Thank You Box */}
+              <div className="flex flex-col gap-1 text-left">
+                <label className="text-[10px] font-extrabold text-zinc-400 uppercase tracking-wider select-none">Footer Description Text</label>
+                <textarea 
+                  rows={3}
+                  value={editedThankYou}
+                  onChange={(e) => setEditedThankYou(e.target.value)}
+                  className="w-full px-3 py-2 bg-zinc-50 border border-gray-100 rounded-xl text-xs font-semibold text-zinc-700 focus:outline-none focus:ring-1 focus:ring-[#0B2D5C] resize-y"
+                  placeholder="Thank you message inside footer..."
+                  id="brand-thanks-input"
+                />
+              </div>
+
+              {/* Copyright message */}
+              <div className="flex flex-col gap-1 text-left">
+                <label className="text-[10px] font-extrabold text-zinc-400 uppercase tracking-wider select-none">Copyright Line</label>
+                <input 
+                  type="text" 
+                  value={editedCopyright}
+                  onChange={(e) => setEditedCopyright(e.target.value)}
+                  className="w-full px-3 py-2 bg-zinc-50 border border-gray-100 rounded-xl text-xs font-semibold text-zinc-650 focus:outline-none focus:ring-1 focus:ring-[#0B2D5C]"
+                  placeholder="© 2026 RCCG House of Glory. All Rights Reserved."
+                  id="brand-copyright-input"
+                />
+              </div>
+
+              {/* Save Trigger */}
+              <button
+                type="submit"
+                className={`w-full py-2.5 px-4 font-bold rounded-xl text-xs uppercase tracking-wider transition-all shadow-md active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer ${
+                  isBrandingSaved 
+                    ? 'bg-emerald-600 text-white' 
+                    : 'bg-[#0B2D5C] hover:bg-[#0B2D5C]/90 text-white hover:shadow-lg'
+                }`}
+                id="btn-save-branding"
+              >
+                {isBrandingSaved ? (
+                  <>
+                    <Check className="w-4 h-4 text-emerald-200" />
+                    Branding Saved!
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4 text-[#D4AF37]" />
+                    Save Website Branding
+                  </>
+                )}
+              </button>
+            </form>
           </div>
 
           {/* Portal URLs Sharing Panel */}
