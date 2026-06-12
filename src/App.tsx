@@ -363,6 +363,7 @@ export default function App() {
           <DonationView 
             accounts={accounts}
             branding={branding}
+            logoUrl={logoUrl}
             onCopyText={handleCopyText}
           />
         ) : (

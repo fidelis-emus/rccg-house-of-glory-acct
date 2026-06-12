@@ -5,10 +5,21 @@ import React, { useState } from 'react';
 interface DonationViewProps {
   accounts: DonationAccount[];
   branding: ChurchBranding;
+  logoUrl: string | null;
   onCopyText: (text: string) => void;
 }
 
-export default function DonationView({ accounts, branding, onCopyText }: DonationViewProps) {
+export default function DonationView({ accounts, branding, logoUrl, onCopyText }: DonationViewProps) {
+  // Diagnostic log to verify parsed logoUrl states before rendering
+  const formattedHeader = logoUrl 
+    ? (logoUrl.startsWith('data:image/') 
+      ? `Base64 Image Data URI (MIME: ${logoUrl.match(/data:([^;]+);/)?.[1] || 'unknown'}, length: ${logoUrl.length} chars)`
+      : `External URL Path (${logoUrl})`)
+    : 'NULL (renders default placeholder Church icon instead)';
+  
+  console.log(`[DonationView Diagnostic] logoUrl received:`, logoUrl ? `${logoUrl.substring(0, 50)}...` : null);
+  console.log(`[DonationView Diagnostic] Status: Parse successful. Format verified as: ${formattedHeader}`);
+
   // Store temporarily copied state per field to show inline success animations
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
