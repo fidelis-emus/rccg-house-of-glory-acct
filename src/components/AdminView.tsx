@@ -30,16 +30,6 @@ export default function AdminView({
   onResetAccounts,
   onCopyText
 }: AdminViewProps) {
-  // Diagnostic log to verify parsed logoUrl states before rendering
-  const formattedHeader = logoUrl 
-    ? (logoUrl.startsWith('data:image/') 
-      ? `Base64 Image Data URI (MIME: ${logoUrl.match(/data:([^;]+);/)?.[1] || 'unknown'}, length: ${logoUrl.length} chars)`
-      : `External URL Path (${logoUrl})`)
-    : 'NULL (renders default placeholder Church icon instead)';
-  
-  console.log(`[AdminView Diagnostic] logoUrl received:`, logoUrl ? `${logoUrl.substring(0, 50)}...` : null);
-  console.log(`[AdminView Diagnostic] Status: Parse successful. Format verified as: ${formattedHeader}`);
-
   // New account form state
   const [newTitle, setNewTitle] = useState('');
   const [newBank, setNewBank] = useState('');
