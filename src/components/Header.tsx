@@ -49,37 +49,41 @@ export default function Header({ currentView, onViewChange, logoUrl }: HeaderPro
           </div>
         </div>
 
-        {/* View Switcher Controls */}
+        {/* View Switcher Controls - Only shown when in admin view or with specialized return link, preventing public users from accessing settings */}
         <nav className="flex items-center" id="nav-controls">
-          <div className="bg-gray-100 p-1.5 rounded-full flex items-center gap-1 shadow-inner border border-gray-200/50">
-            <button
-              onClick={() => onViewChange('donation')}
-              className={`flex items-center gap-2 px-5 py-2 rounded-full text-xs md:text-sm font-semibold transition-all duration-300 ${
-                currentView === 'donation'
-                  ? 'bg-white text-[#0B2D5C] shadow-md scale-100'
-                  : 'text-gray-500 hover:text-gray-800 hover:bg-white/50'
-              }`}
-              style={currentView === 'donation' ? { color: '#0B2D5C' } : {}}
-              id="switch-donation-btn"
+          {currentView === 'admin' ? (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => onViewChange('donation')}
+                className="flex items-center gap-2 px-4 py-2 border border-zinc-200 text-zinc-650 hover:bg-zinc-50 hover:text-zinc-800 rounded-full text-xs font-semibold uppercase tracking-wider transition-all shadow-sm active:scale-95"
+                id="switch-donation-btn"
+              >
+                <Gift className="w-3.5 h-3.5 text-[#D4AF37]" />
+                View Donation Site
+              </button>
+              
+              <div 
+                className="flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider border select-none transition-all duration-300"
+                style={{ 
+                  backgroundColor: 'rgba(212, 175, 55, 0.1)', 
+                  borderColor: 'rgba(212, 175, 55, 0.4)',
+                  color: '#0B2D5C'
+                }}
+                id="admin-status-badge"
+              >
+                <Sliders className="w-3.5 h-3.5" style={{ color: '#D4AF37' }} />
+                Admin Mode
+              </div>
+            </div>
+          ) : (
+            <div 
+              className="px-4 py-2 rounded-full text-xs font-semibold uppercase tracking-widest text-[#0B2D5C]/80 bg-[#0B2D5C]/5 border border-[#0B2D5C]/10 flex items-center gap-1.5 select-none"
+              id="giving-badge"
             >
-              <Gift className="w-4 h-4" style={{ color: currentView === 'donation' ? '#D4AF37' : undefined }} />
-              Donation Portal
-            </button>
-            
-            <button
-              onClick={() => onViewChange('admin')}
-              className={`flex items-center gap-2 px-5 py-2 rounded-full text-xs md:text-sm font-semibold transition-all duration-300 ${
-                currentView === 'admin'
-                  ? 'bg-white text-[#0B2D5C] shadow-md scale-100'
-                  : 'text-gray-500 hover:text-gray-800 hover:bg-white/50'
-              }`}
-              style={currentView === 'admin' ? { color: '#0B2D5C' } : {}}
-              id="switch-admin-btn"
-            >
-              <Sliders className="w-4 h-4" style={{ color: currentView === 'admin' ? '#D4AF37' : undefined }} />
-              Admin Center
-            </button>
-          </div>
+              <Gift className="w-3.5 h-3.5 text-[#D4AF37]" />
+              Secure Portal
+            </div>
+          )}
         </nav>
       </div>
     </header>
