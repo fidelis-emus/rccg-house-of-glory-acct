@@ -1,14 +1,15 @@
 import { DonationAccount, ChurchBranding } from '../types';
-import { Copy, CreditCard, Coins, DollarSign, Building, Sparkles, Check } from 'lucide-react';
+import { Copy, CreditCard, Coins, DollarSign, Building, Heart, Check, Church } from 'lucide-react';
 import React, { useState } from 'react';
 
 interface DonationViewProps {
   accounts: DonationAccount[];
   branding: ChurchBranding;
+  logoUrl: string | null;
   onCopyText: (text: string) => void;
 }
 
-export default function DonationView({ accounts, branding, onCopyText }: DonationViewProps) {
+export default function DonationView({ accounts, branding, logoUrl, onCopyText }: DonationViewProps) {
   // Store temporarily copied state per field to show inline success animations
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
@@ -26,7 +27,7 @@ export default function DonationView({ accounts, branding, onCopyText }: Donatio
     if (uppercaseTitle.includes('OFFERING')) {
       return <Coins className="w-5 h-5 text-[#D4AF37]" />;
     } else if (uppercaseTitle.includes('TITHE')) {
-      return <Sparkles className="w-5 h-5 text-[#D4AF37]" />;
+      return <Heart className="w-5 h-5 text-[#D4AF37] fill-[#D4AF37]" />;
     } else if (uppercaseTitle.includes('PROJECT')) {
       return <Building className="w-5 h-5 text-[#D4AF37]" />;
     } else if (uppercaseTitle.includes('DOLLAR') || uppercaseTitle.includes('USD') || uppercaseTitle.includes('$')) {
@@ -37,6 +38,31 @@ export default function DonationView({ accounts, branding, onCopyText }: Donatio
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8 animate-slide-up" id="donation-view-root">
+      
+      {/* Dynamic Church Logo Centerpiece - Always visible when uploaded! */}
+      <div className="flex justify-center mb-6" id="donation-view-logo-container">
+        {logoUrl ? (
+          <div className="relative w-28 h-28 rounded-full overflow-hidden border-4 border-[#D4AF37] flex items-center justify-center bg-white shadow-xl transform transition-all hover:scale-105 duration-300">
+            <img 
+              src={logoUrl} 
+              alt={branding.churchName}
+              className="w-full h-full object-cover"
+              referrerPolicy="no-referrer"
+            />
+          </div>
+        ) : (
+          <div 
+            className="w-28 h-28 rounded-full flex items-center justify-center text-white border-4 border-dashed shadow-xl transform transition-all hover:scale-105 duration-300"
+            style={{ 
+              backgroundColor: '#0B2D5C',
+              borderColor: '#D4AF37'
+            }}
+          >
+            <Church className="w-14 h-14 text-[#D4AF37] animate-pulse" />
+          </div>
+        )}
+      </div>
+
       {/* Inspired Hero Title / Sub-Header */}
       <div className="text-center mb-10 max-w-2xl mx-auto" id="donation-hero">
         <h2 
@@ -51,7 +77,7 @@ export default function DonationView({ accounts, branding, onCopyText }: Donatio
         
         {/* Helper copy indicator */}
         <div 
-          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border text-xs font-semibold uppercase tracking-wider select-none bg-amber-50/50"
+          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border text-xs font-semibold uppercase tracking-wider select-none bg-amber-50/50 shadow-sm"
           style={{ color: '#0B2D5C', borderColor: 'rgba(212, 175, 55, 0.4)' }}
           id="tap-indicator"
         >
@@ -77,28 +103,31 @@ export default function DonationView({ accounts, branding, onCopyText }: Donatio
       ) : (
         /* Grid container for beautiful responsive cards */
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6" id="donation-cards-grid">
-          {accounts.map((account, index) => {
+          {accounts.map((account) => {
             const cardIcon = getCardIcon(account.title);
             
+            // Explicitly Clean details from the title for display and make Extra Bold
+            const cleanedTitle = account.title.toUpperCase().replace(/\s+DETAILS$/, '');
+
             return (
               <div 
                 key={account.id}
                 className="bg-white rounded-3xl border border-gray-100/80 shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col justify-between group transform hover:-translate-y-1"
                 id={`donation-card-${account.id}`}
               >
-                {/* Card Title Header */}
+                {/* Card Title Header - Style Bold & Cleaned */}
                 <div 
-                  className="px-6 py-4 border-b border-gray-50 flex items-center justify-between bg-zinc-50/50 group-hover:bg-amber-50/30 transition-colors"
+                  className="px-6 py-5 border-b border-gray-50 flex items-center justify-between bg-zinc-50/50 group-hover:bg-amber-50/30 transition-colors"
                   id={`card-header-${account.id}`}
                 >
                   <h3 
-                    className="font-bold text-xs uppercase tracking-widest flex items-center gap-2 text-zinc-800"
+                    className="font-black text-sm uppercase tracking-wider flex items-center gap-2.5 text-[#0B2D5C]"
                     id={`card-title-${account.id}`}
                   >
                     {cardIcon}
-                    <span className="line-clamp-1">{account.title}</span>
+                    <span className="line-clamp-1">{cleanedTitle}</span>
                   </h3>
-                  <span className="text-[10px] bg-sky-50 text-[#0B2D5C] px-2.5 py-1 rounded-full font-semibold uppercase tracking-wider select-none border border-sky-100">
+                  <span className="text-[10px] bg-sky-50 text-[#0B2D5C] px-2.5 py-1 rounded-full font-bold uppercase tracking-wider select-none border border-sky-100 shadow-sm">
                     Active
                   </span>
                 </div>
@@ -113,10 +142,10 @@ export default function DonationView({ accounts, branding, onCopyText }: Donatio
                     id={`row-${account.id}-bank`}
                   >
                     <div className="flex flex-col">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 select-none">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-gray-405 select-none">
                         🔘 Bank Name
                       </span>
-                      <span className="text-sm font-semibold text-zinc-850">
+                      <span className="text-sm font-bold text-zinc-850">
                         {account.bankName}
                       </span>
                     </div>
@@ -125,7 +154,7 @@ export default function DonationView({ accounts, branding, onCopyText }: Donatio
                         e.stopPropagation();
                         handleCopy(account.bankName, `${account.id}-bank`);
                       }}
-                      className="p-2 rounded-lg bg-gray-100 hover:bg-[#0B2D5C] hover:text-white text-gray-500 hover:scale-105 transition active:scale-95 flex items-center gap-1 text-[11px] font-medium"
+                      className="p-2 rounded-lg bg-gray-105 hover:bg-[#0B2D5C] hover:text-white text-gray-500 hover:scale-105 transition active:scale-95 flex items-center gap-1 text-[11px] font-bold"
                       title="Copy Bank"
                       id={`btn-copy-${account.id}-bank`}
                     >
@@ -151,10 +180,10 @@ export default function DonationView({ accounts, branding, onCopyText }: Donatio
                     id={`row-${account.id}-number`}
                   >
                     <div className="flex flex-col">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 select-none">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-gray-405 select-none">
                         🔘 Account Number
                       </span>
-                      <span className="text-base md:text-lg font-mono font-bold text-[#0B2D5C] tracking-wide">
+                      <span className="text-base md:text-lg font-mono font-black text-[#0B2D5C] tracking-wide">
                         {account.accountNumber}
                       </span>
                     </div>
@@ -163,7 +192,7 @@ export default function DonationView({ accounts, branding, onCopyText }: Donatio
                         e.stopPropagation();
                         handleCopy(account.accountNumber, `${account.id}-number`);
                       }}
-                      className="p-2.5 rounded-lg bg-[#0B2D5C]/5 hover:bg-[#0B2D5C] hover:text-white text-[#0B2D5C] hover:scale-105 transition active:scale-95 flex items-center gap-1.5 text-xs font-bold shadow-sm"
+                      className="p-2.5 rounded-lg bg-[#0B2D5C]/5 hover:bg-[#0B2D5C] hover:text-white text-[#0B2D5C] hover:scale-105 transition active:scale-95 flex items-center gap-1.5 text-xs font-black shadow-sm"
                       title="Copy Account Number"
                       id={`btn-copy-${account.id}-number`}
                     >
@@ -184,15 +213,15 @@ export default function DonationView({ accounts, branding, onCopyText }: Donatio
                   {/* Account Name Row */}
                   <div 
                     onClick={() => handleCopy(account.accountName, `${account.id}-name`)}
-                    className="relative flex items-center justify-between p-3 rounded-xl border border-gray-50 bg-gray-50/30 hover:bg-[#0B2D5C]/5 hover:border-[#D4AF37]/50 transition-all duration-200 cursor-pointer group/row"
+                    className="relative flex items-center justify-between p-3 rounded-xl border border-gray-55 bg-gray-50/30 hover:bg-[#0B2D5C]/5 hover:border-[#D4AF37]/50 transition-all duration-200 cursor-pointer group/row"
                     title="Click to copy Account Name"
                     id={`row-${account.id}-name`}
                   >
                     <div className="flex flex-col">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 select-none">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-gray-405 select-none">
                         🔘 Account Name
                       </span>
-                      <span className="text-sm font-semibold text-zinc-800 tracking-wide uppercase">
+                      <span className="text-sm font-bold text-zinc-900 tracking-wide uppercase">
                         {account.accountName}
                       </span>
                     </div>
@@ -201,7 +230,7 @@ export default function DonationView({ accounts, branding, onCopyText }: Donatio
                         e.stopPropagation();
                         handleCopy(account.accountName, `${account.id}-name`);
                       }}
-                      className="p-2 rounded-lg bg-gray-100 hover:bg-[#0B2D5C] hover:text-white text-gray-500 hover:scale-105 transition active:scale-95 flex items-center gap-1 text-[11px] font-medium"
+                      className="p-2 rounded-lg bg-gray-105 hover:bg-[#0B2D5C] hover:text-white text-gray-500 hover:scale-105 transition active:scale-95 flex items-center gap-1 text-[11px] font-bold"
                       title="Copy Account Name"
                       id={`btn-copy-${account.id}-name`}
                     >
@@ -233,6 +262,8 @@ export default function DonationView({ accounts, branding, onCopyText }: Donatio
           })}
         </div>
       )}
+
     </div>
   );
 }
+

@@ -2,8 +2,10 @@ import React, { useState, useRef, useEffect } from 'react';
 import { DonationAccount, ChurchBranding } from '../types';
 import { 
   Plus, Edit2, Trash2, Upload, RefreshCw, Save, X, Info, HelpCircle, FileImage, 
-  CreditCard, Sparkles, Building, Coins, ShieldCheck, Check, Paintbrush
+  CreditCard, Sparkles, Building, Coins, ShieldCheck, Check, Paintbrush,
+  QrCode, Download, Globe, FileText, Church
 } from 'lucide-react';
+import QRCode from 'qrcode';
 
 interface AdminViewProps {
   accounts: DonationAccount[];
@@ -47,6 +49,49 @@ export default function AdminView({
   const [editedCopyright, setEditedCopyright] = useState(branding.copyrightText);
   const [isBrandingSaved, setIsBrandingSaved] = useState(false);
 
+  // Dynamic QR state loaded inside Admin Panel
+  const [adminQrCodeUrl, setAdminQrCodeUrl] = useState<string>('');
+  const [adminQrType, setAdminQrType] = useState<'link' | 'details'>('link');
+
+  // Build the text block compiling all details
+  const getAccountsText = () => {
+    let t = `⛪ ${branding.churchName.toUpperCase()}\n${branding.churchSubtitle}\n━━━━━━━━━━━━━━━━━━━━━━\n`;
+    accounts.forEach((acc) => {
+      const titleCleaned = acc.title.toUpperCase().replace(/\s+DETAILS/g, '').trim();
+      t += `📍 ${titleCleaned}\n`;
+      t += `   Bank: ${acc.bankName}\n`;
+      t += `   A/C No: ${acc.accountNumber}\n`;
+      t += `   Name: ${acc.accountName}\n`;
+      t += `━━━━━━━━━━━━━━━━━━━━━━\n`;
+    });
+    t += `Thank you for partnering with us!`;
+    return t;
+  };
+
+  useEffect(() => {
+    const generateQR = async () => {
+      try {
+        const payload = adminQrType === 'link' 
+          ? window.location.origin + window.location.pathname 
+          : getAccountsText();
+          
+        const dataUrl = await QRCode.toDataURL(payload, {
+          margin: 2,
+          width: 320,
+          scale: 10,
+          color: {
+            dark: '#0B2D5C', // RCCG theme matching blue
+            light: '#FFFFFF'
+          }
+        });
+        setAdminQrCodeUrl(dataUrl);
+      } catch (err) {
+        console.error('Failed generating QR code in admin view', err);
+      }
+    };
+    generateQR();
+  }, [adminQrType, accounts, branding]);
+
   // Synchronize local edit values when master branding configuration changes (e.g. from a reset operation)
   useEffect(() => {
     setEditedChurchName(branding.churchName);
@@ -79,10 +124,10 @@ export default function AdminView({
   
   // Quick-fill templates for titles
   const quickTitles = [
-    'OFFERING ACCOUNT DETAILS', 
-    'TITHE ACCOUNT DETAILS', 
-    'PROJECT ACCOUNT DETAILS', 
-    'DOLLAR ACCOUNT (USD) DETAILS',
+    'OFFERING ACCOUNT', 
+    'TITHE ACCOUNT', 
+    'PROJECT ACCOUNT', 
+    'DOLLAR ACCOUNT (USD)',
     'BUILDING FUND ACCOUNT',
     'WELFARE DEPT ACCOUNT'
   ];
@@ -106,8 +151,11 @@ export default function AdminView({
       return;
     }
     
+    // Auto-strip details suffix from title
+    const titCleaned = newTitle.trim().toUpperCase().replace(/\s+DETAILS/g, '');
+
     onAddAccount({
-      title: newTitle.trim(),
+      title: titCleaned,
       bankName: newBank.trim(),
       accountNumber: newNumber.trim(),
       accountName: newName.trim().toUpperCase()
@@ -132,9 +180,12 @@ export default function AdminView({
       alert('All fields must be filled out before saving edits.');
       return;
     }
+
+    const editTitCleaned = editTitle.trim().toUpperCase().replace(/\s+DETAILS/g, '');
+
     onUpdateAccount({
       id,
-      title: editTitle.trim(),
+      title: editTitCleaned,
       bankName: editBank.trim(),
       accountNumber: editNumber.trim(),
       accountName: editName.trim().toUpperCase()
@@ -255,10 +306,10 @@ export default function AdminView({
                     className="w-28 h-28 rounded-full flex items-center justify-center text-white border-4 border-white shadow-lg transition-transform duration-300"
                     style={{ backgroundColor: '#0B2D5C' }}
                   >
-                    <span className="font-extrabold text-[#D4AF37] text-5xl">G</span>
+                    <Church className="w-14 h-14" style={{ color: '#D4AF37' }} />
                   </div>
-                  <span className="text-[10px] bg-[#0B2D5C]/5 text-[#0B2D5C] font-semibold px-3 py-0.5 mt-3 rounded-full select-none">
-                    Default Church Icon
+                  <span className="text-[10px] bg-[#0B2D5C]/5 text-[#0B2D5C] font-semibold px-3 py-0.5 mt-3 rounded-full select-none font-bold uppercase tracking-wider">
+                    Default Church Logo
                   </span>
                 </div>
               )}
@@ -506,6 +557,91 @@ export default function AdminView({
                   Copy Admin URL
                 </button>
               </div>
+            </div>
+          </div>
+
+          {/* RCCG Admin QR Code Card */}
+          <div className="bg-white rounded-3xl border border-gray-100 shadow-md p-6" id="admin-qr-generator-card">
+            <h3 className="font-bold text-sm uppercase tracking-wider text-[#0B2D5C] mb-3 flex items-center gap-2">
+              <QrCode className="w-4 h-4 text-[#D4AF37]" />
+              Universal QR Scan Code
+            </h3>
+
+            <p className="text-[11px] text-gray-500 mb-4 leading-relaxed font-semibold">
+              Generate a high-resolution QR scanning code for projection screens, service flyers, or printing on service bulletins.
+            </p>
+
+            <div className="flex flex-col items-center justify-center p-3.5 bg-zinc-50 border border-zinc-150 rounded-2xl mb-4 text-center">
+              {adminQrCodeUrl ? (
+                <div className="relative group p-2 bg-white rounded-xl shadow-inner border border-zinc-200">
+                  <img 
+                    src={adminQrCodeUrl} 
+                    alt="Current Generated QR Code" 
+                    className="w-40 h-40 object-contain mx-auto"
+                  />
+                  <div className="absolute inset-x-0 bottom-0 top-0 bg-black/5 rounded-xl opacity-0 hover:opacity-100 transition duration-155 pointer-events-none flex items-center justify-center">
+                    <QrCode className="w-8 h-8 text-[#D4AF37]" id="preview-watermark" />
+                  </div>
+                </div>
+              ) : (
+                <div className="w-40 h-40 flex items-center justify-center bg-zinc-100 rounded-xl animate-pulse">
+                  <QrCode className="w-10 h-10 text-gray-300" />
+                </div>
+              )}
+
+              {adminQrCodeUrl && (
+                <a 
+                  href={adminQrCodeUrl}
+                  download={`${branding.churchName.toUpperCase().replace(/\s+/g, '_')}_QR_CODE.png`}
+                  className="mt-3.5 w-full inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-[#0B2D5C] text-white hover:bg-[#D4AF37] hover:text-[#0B2D5C] font-semibold text-xs rounded-xl uppercase tracking-wider transition-all duration-150 active:scale-95 shadow-sm cursor-pointer"
+                  title="Download dynamic QR png image file"
+                  id="admin-btn-download-qr"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  Download Scan Card File
+                </a>
+              )}
+            </div>
+
+            {/* QR Payload Selection */}
+            <span className="text-[9.5px] uppercase tracking-wider font-extrabold text-zinc-400 block mb-1.5">
+              QR Action Type
+            </span>
+            <div className="grid grid-cols-2 gap-1.5 bg-zinc-50 border border-zinc-150 p-1.5 rounded-2xl mb-3 shadow-inner">
+              <button
+                type="button"
+                onClick={() => setAdminQrType('link')}
+                className={`py-2 px-1 rounded-xl text-[10.5px] font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-1 cursor-pointer ${
+                  adminQrType === 'link'
+                    ? 'bg-[#0B2D5C] text-white shadow-sm'
+                    : 'text-zinc-500 hover:text-zinc-800'
+                }`}
+                id="admin-tab-qr-link"
+              >
+                <Globe className="w-3 h-3 text-[#D4AF37]" />
+                Web Link
+              </button>
+              <button
+                type="button"
+                onClick={() => setAdminQrType('details')}
+                className={`py-2 px-1 rounded-xl text-[10.5px] font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-1 cursor-pointer ${
+                  adminQrType === 'details'
+                    ? 'bg-[#0B2D5C] text-white shadow-sm'
+                    : 'text-zinc-500 hover:text-zinc-800'
+                }`}
+                id="admin-tab-qr-text"
+              >
+                <FileText className="w-3 h-3 text-[#D4AF37]" />
+                Copy-Text
+              </button>
+            </div>
+
+            <div className="bg-amber-50/50 rounded-xl px-3 py-2.5 border border-amber-100 text-[10.5px] text-amber-900 font-medium leading-relaxed">
+              {adminQrType === 'link' ? (
+                <span>🌐 <strong>Website Mode</strong>: Scanning directs any mobile phone immediately to this live server, displaying church accounts cleanly with tap-to-copy capability.</span>
+              ) : (
+                <span>📝 <strong>Offline Accounts Mode</strong>: Scanning instantly captures all accounts text offline directly in the phone's native camera dashboard without visiting any website.</span>
+              )}
             </div>
           </div>
 

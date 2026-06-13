@@ -4,12 +4,12 @@ import Header from './components/Header';
 import DonationView from './components/DonationView';
 import AdminView from './components/AdminView';
 import ToastContainer from './components/ToastContainer';
-import { Heart, Globe } from 'lucide-react';
+import { Heart, Globe, Church } from 'lucide-react';
 
 const DEFAULT_ACCOUNTS: DonationAccount[] = [
   {
     id: 'default-offering',
-    title: 'OFFERING ACCOUNT DETAILS',
+    title: 'OFFERING ACCOUNT',
     bankName: 'UBA',
     accountNumber: '1028246694',
     accountName: 'RCCG HOUSE OF GLORY',
@@ -17,7 +17,7 @@ const DEFAULT_ACCOUNTS: DonationAccount[] = [
   },
   {
     id: 'default-tithe',
-    title: 'TITHE ACCOUNT DETAILS',
+    title: 'TITHE ACCOUNT',
     bankName: 'UBA',
     accountNumber: '1028247440',
     accountName: 'RCCG HOUSE OF GLORY',
@@ -25,7 +25,7 @@ const DEFAULT_ACCOUNTS: DonationAccount[] = [
   },
   {
     id: 'default-project',
-    title: 'PROJECT ACCOUNT DETAILS',
+    title: 'PROJECT ACCOUNT',
     bankName: 'UBA',
     accountNumber: '1028247206',
     accountName: 'RCCG HOUSE OF GLORY',
@@ -33,7 +33,7 @@ const DEFAULT_ACCOUNTS: DonationAccount[] = [
   },
   {
     id: 'default-dollar',
-    title: 'DOLLAR ACCOUNT (USD) DETAILS',
+    title: 'DOLLAR ACCOUNT (USD)',
     bankName: 'UBA',
     accountNumber: '3004812341',
     accountName: 'RCCG HOUSE OF GLORY',
@@ -72,6 +72,15 @@ export default function App() {
   const [accounts, setAccounts] = useState<DonationAccount[]>([]);
   const [branding, setBranding] = useState<ChurchBranding>(DEFAULT_BRANDING);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  // Trigger high quality secure church entrance loading on mounting
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Synchronize route changes when back/forward browser arrows or links are used
   useEffect(() => {
@@ -127,7 +136,17 @@ export default function App() {
       // 2. Load Donation Accounts
       const storedAccounts = localStorage.getItem('rccg_donation_accounts');
       if (storedAccounts) {
-        setAccounts(JSON.parse(storedAccounts));
+        const parsed = JSON.parse(storedAccounts) as DonationAccount[];
+        const migrated = parsed.map((acc) => {
+          let t = acc.title;
+          const matchDetails = /\s+DETAILS$/i;
+          if (matchDetails.test(t)) {
+            t = t.replace(matchDetails, '');
+          }
+          return { ...acc, title: t };
+        });
+        setAccounts(migrated);
+        localStorage.setItem('rccg_donation_accounts', JSON.stringify(migrated));
       } else {
         setAccounts(DEFAULT_ACCOUNTS);
         localStorage.setItem('rccg_donation_accounts', JSON.stringify(DEFAULT_ACCOUNTS));
@@ -289,6 +308,52 @@ export default function App() {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
 
+  // Render a beautiful, premium, custom church-branded entrance loader with absolutely no Gemini/AI icons
+  if (isLoading) {
+    return (
+      <div 
+        className="min-h-screen flex flex-col items-center justify-center text-white"
+        style={{ backgroundColor: '#0B2D5C' }}
+        id="app-initial-loader"
+      >
+        <div className="flex flex-col items-center max-w-sm px-6 text-center animate-pulse">
+          {logoUrl ? (
+            <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-[#D4AF37] bg-white flex items-center justify-center shadow-2xl mb-5">
+              <img 
+                src={logoUrl} 
+                alt="Loading Logo" 
+                className="w-full h-full object-cover"
+                referrerPolicy="no-referrer"
+              />
+            </div>
+          ) : (
+            <div 
+              className="w-24 h-24 rounded-full flex items-center justify-center text-white border-4 border-dashed shadow-2xl mb-5"
+              style={{ 
+                backgroundColor: '#0B2D5C',
+                borderColor: '#D4AF37'
+              }}
+            >
+              <Church className="w-12 h-12 text-[#D4AF37]" />
+            </div>
+          )}
+          <h2 className="text-[#D4AF37] text-xl font-extrabold tracking-widest uppercase mb-1.5">{branding.churchName}</h2>
+          <p className="text-zinc-300 text-xs font-semibold uppercase tracking-widest">{branding.churchSubtitle}</p>
+          
+          <div className="mt-8 flex items-center gap-2 justify-center">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#D4AF37] animate-bounce [animation-delay:-0.3s]"></span>
+            <span className="w-2.5 h-2.5 rounded-full bg-[#D4AF37] animate-bounce [animation-delay:-0.15s]"></span>
+            <span className="w-2.5 h-2.5 rounded-full bg-[#D4AF37] animate-bounce"></span>
+          </div>
+          
+          <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest mt-5 select-none">
+            Secure Church Portal Connecting
+          </span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-white flex flex-col font-sans selection:bg-[#D4AF37]/30 selection:text-[#0B2D5C]">
       {/* Dynamic Header Component */}
@@ -305,6 +370,7 @@ export default function App() {
           <DonationView 
             accounts={accounts}
             branding={branding}
+            logoUrl={logoUrl}
             onCopyText={handleCopyText}
           />
         ) : (
