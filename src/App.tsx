@@ -57,11 +57,15 @@ export default function App() {
   const [currentView, setCurrentView] = useState<'donation' | 'admin'>(() => {
     const hash = window.location.hash;
     const searchParams = new URLSearchParams(window.location.search);
+    const pathname = window.location.pathname;
     if (
       hash === '#/admin' || 
       hash === '#admin' || 
       searchParams.get('portal') === 'admin' || 
-      searchParams.get('view') === 'admin'
+      searchParams.get('view') === 'admin' ||
+      pathname === '/admin' ||
+      pathname.endsWith('/admin') ||
+      pathname.includes('/admin/')
     ) {
       return 'admin';
     }
@@ -87,11 +91,15 @@ export default function App() {
     const handleLocationChange = () => {
       const hash = window.location.hash;
       const searchParams = new URLSearchParams(window.location.search);
+      const pathname = window.location.pathname;
       if (
         hash === '#/admin' || 
         hash === '#admin' || 
         searchParams.get('portal') === 'admin' || 
-        searchParams.get('view') === 'admin'
+        searchParams.get('view') === 'admin' ||
+        pathname === '/admin' ||
+        pathname.endsWith('/admin') ||
+        pathname.includes('/admin/')
       ) {
         setCurrentView('admin');
       } else {
@@ -112,14 +120,14 @@ export default function App() {
   const handleViewChange = (view: 'donation' | 'admin') => {
     setCurrentView(view);
     
-    const baseUrl = window.location.origin + window.location.pathname;
+    const baseOrigin = window.location.origin;
     if (view === 'admin') {
       window.location.hash = '/admin';
-      const cleanUrl = `${baseUrl}?view=admin#/admin`;
+      const cleanUrl = `${baseOrigin}/admin?view=admin#/admin`;
       window.history.pushState({ path: cleanUrl }, '', cleanUrl);
     } else {
       window.location.hash = '/';
-      const cleanUrl = `${baseUrl}?view=donation#/`;
+      const cleanUrl = `${baseOrigin}/?view=donation#/`;
       window.history.pushState({ path: cleanUrl }, '', cleanUrl);
     }
   };
