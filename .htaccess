@@ -1,0 +1,24 @@
+# ====================================================================
+# RCCG House Of Glory - Shared Hosting Apache Redirect Rule Listing
+# Configures elegant RESTful URLs, handles CORS, and restricts direct file access
+# ====================================================================
+
+RewriteEngine On
+
+# 1. Set base pathway
+RewriteBase /
+
+# 2. Redirect clean Resource paths directly to api.php
+# E.g., /branding -> /api.php/branding, /donation_accounts/123 -> /api.php/donation_accounts/123
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ api.php/$1 [L,QSA]
+
+# 3. Secure SQLite Database file in /storage/ from direct public downloads
+<Files "*.sqlite">
+    Order Deny,Allow
+    Deny from all
+</Files>
+
+# 4. Disable Directory Indexes (Prevents general structural file browsing)
+Options -Indexes

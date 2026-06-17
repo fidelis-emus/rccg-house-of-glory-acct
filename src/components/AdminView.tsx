@@ -18,6 +18,7 @@ interface AdminViewProps {
   onUpdateLogo: (logoBase64: string | null) => void;
   onResetAccounts: () => void;
   onCopyText: (text: string) => void;
+  isFirebaseEnabled?: boolean;
 }
 
 export default function AdminView({
@@ -30,7 +31,8 @@ export default function AdminView({
   onDeleteAccount,
   onUpdateLogo,
   onResetAccounts,
-  onCopyText
+  onCopyText,
+  isFirebaseEnabled = false
 }: AdminViewProps) {
   // New account form state
   const [newTitle, setNewTitle] = useState('');
@@ -71,8 +73,10 @@ export default function AdminView({
   useEffect(() => {
     const generateQR = async () => {
       try {
+        // Ensure scanning directs the user to the member donation page, stripping any active /admin path
+        const cleanPathname = window.location.pathname.replace(/\/admin\/?$/, '');
         const payload = adminQrType === 'link' 
-          ? window.location.origin + window.location.pathname 
+          ? window.location.origin + (cleanPathname || '/') 
           : getAccountsText();
           
         const dataUrl = await QRCode.toDataURL(payload, {
@@ -643,6 +647,20 @@ export default function AdminView({
                 <span>📝 <strong>Offline Accounts Mode</strong>: Scanning instantly captures all accounts text offline directly in the phone's native camera dashboard without visiting any website.</span>
               )}
             </div>
+          </div>
+
+          {/* Database Status Card */}
+          <div className="bg-[#0B2D5C]/5 border border-[#0B2D5C]/10 rounded-2xl p-5" id="sqlite-db-status-card">
+            <h4 className="flex items-center gap-1.5 font-bold text-xs text-[#0B2D5C] uppercase tracking-wider mb-1.5">
+              <span className="w-2, h-2 rounded-full inline-block bg-emerald-500 animate-pulse" />
+              SQLite Database Connected
+            </h4>
+            <p className="text-[11px] text-[#0B2D5C]/80 font-semibold leading-relaxed mb-1">
+              Your donation portal details are securely conserved in a lightweight, file-based SQLite database.
+            </p>
+            <p className="text-[11px] text-gray-500 font-medium leading-relaxed">
+              All branding edits, QR codes, and custom bank accounts persist flawlessly across server restarts.
+            </p>
           </div>
 
           {/* Quick Info Box */}

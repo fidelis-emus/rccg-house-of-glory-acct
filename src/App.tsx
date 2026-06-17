@@ -78,12 +78,64 @@ export default function App() {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // Trigger high quality secure church entrance loading on mounting
+  // Fetch initial configuration on mount
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
-    return () => clearTimeout(timer);
+    let loadedBranding = false;
+    let loadedAccounts = false;
+
+    const checkFinished = () => {
+      if (loadedBranding && loadedAccounts) {
+        setIsLoading(false);
+      }
+    };
+
+    // 1. Fetch Branding
+    fetch('/api/branding')
+      .then((res) => {
+        if (!res.ok) throw new Error('Failed to fetch branding');
+        return res.json();
+      })
+      .then((data) => {
+        if (data) {
+          const { logoUrl: remoteLogo, ...brandingData } = data;
+          if (brandingData && brandingData.churchName) {
+            setBranding((prev) => ({ ...prev, ...brandingData }));
+          }
+          if (remoteLogo !== undefined) {
+            setLogoUrl(remoteLogo);
+          }
+        }
+        loadedBranding = true;
+        checkFinished();
+      })
+      .catch((err) => {
+        console.error('Error loading branding:', err);
+        loadedBranding = true;
+        checkFinished();
+      });
+
+    // 2. Fetch Accounts
+    fetch('/api/donation_accounts')
+      .then((res) => {
+        if (!res.ok) throw new Error('Failed to fetch accounts');
+        return res.json();
+      })
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setAccounts(data);
+        } else {
+          setAccounts(DEFAULT_ACCOUNTS);
+        }
+        loadedAccounts = true;
+        checkFinished();
+      })
+      .catch((err) => {
+        console.error('Error loading accounts:', err);
+        setAccounts(DEFAULT_ACCOUNTS);
+        loadedAccounts = true;
+        checkFinished();
+      });
+
   }, []);
 
   // Synchronize route changes when back/forward browser arrows or links are used
@@ -132,66 +184,20 @@ export default function App() {
     }
   };
 
-  // On App Mount: Read configuration values from LocalStorage or fall back to requested defaults
-  useEffect(() => {
-    try {
-      // 1. Load Logo
-      const storedLogo = localStorage.getItem('rccg_church_logo');
-      if (storedLogo) {
-        setLogoUrl(storedLogo);
-      }
-
-      // 2. Load Donation Accounts
-      const storedAccounts = localStorage.getItem('rccg_donation_accounts');
-      if (storedAccounts) {
-        const parsed = JSON.parse(storedAccounts) as DonationAccount[];
-        const migrated = parsed.map((acc) => {
-          let t = acc.title;
-          const matchDetails = /\s+DETAILS$/i;
-          if (matchDetails.test(t)) {
-            t = t.replace(matchDetails, '');
-          }
-          return { ...acc, title: t };
-        });
-        setAccounts(migrated);
-        localStorage.setItem('rccg_donation_accounts', JSON.stringify(migrated));
-      } else {
-        setAccounts(DEFAULT_ACCOUNTS);
-        localStorage.setItem('rccg_donation_accounts', JSON.stringify(DEFAULT_ACCOUNTS));
-      }
-
-      // 3. Load Church Branding Customizations
-      const storedBranding = localStorage.getItem('rccg_church_branding');
-      if (storedBranding) {
-        setBranding({ ...DEFAULT_BRANDING, ...JSON.parse(storedBranding) });
-      } else {
-        setBranding(DEFAULT_BRANDING);
-        localStorage.setItem('rccg_church_branding', JSON.stringify(DEFAULT_BRANDING));
-      }
-    } catch (e) {
-      console.warn('LocalStorage error reading configs, loading default values: ', e);
-      setAccounts(DEFAULT_ACCOUNTS);
-      setBranding(DEFAULT_BRANDING);
-    }
-  }, []);
-
-  // Set & store updated list
-  const saveAccountsToStore = (newAccounts: DonationAccount[]) => {
-    setAccounts(newAccounts);
-    try {
-      localStorage.setItem('rccg_donation_accounts', JSON.stringify(newAccounts));
-    } catch (err) {
-      console.error('Failed to write accounts details to local storage', err);
-    }
-  };
-
   const handleUpdateBranding = (newBranding: ChurchBranding) => {
     setBranding(newBranding);
-    try {
-      localStorage.setItem('rccg_church_branding', JSON.stringify(newBranding));
-    } catch (err) {
-      console.error('Failed to write branding details to local storage', err);
-    }
+    fetch('/api/branding', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newBranding),
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error('Failed to update branding');
+        return res.json();
+      })
+      .catch((err) => {
+        console.error('Error updating branding:', err);
+      });
   };
 
   // -------------------------------------------------------------
@@ -200,47 +206,91 @@ export default function App() {
   const handleAddAccount = (accountData: Omit<DonationAccount, 'id'>) => {
     const newAccount: DonationAccount = {
       ...accountData,
-      id: 'acc-' + Date.now()
+      id: 'acc-' + Date.now(),
+      isDefault: accountData.isDefault || false
     };
-    const updated = [...accounts, newAccount];
-    saveAccountsToStore(updated);
+    
+    // Update state immediately for visual response
+    setAccounts((prev) => [...prev, newAccount]);
+
+    fetch('/api/donation_accounts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newAccount)
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error('Failed to publish account');
+        return res.json();
+      })
+      .catch((err) => {
+        console.error('Error posting new account:', err);
+      });
   };
 
   const handleUpdateAccount = (updatedAccount: DonationAccount) => {
-    const updated = accounts.map((acc) => (acc.id === updatedAccount.id ? updatedAccount : acc));
-    saveAccountsToStore(updated);
+    setAccounts((prev) => prev.map((acc) => (acc.id === updatedAccount.id ? updatedAccount : acc)));
+
+    fetch(`/api/donation_accounts/${updatedAccount.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updatedAccount)
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error('Failed to update account');
+        return res.json();
+      })
+      .catch((err) => {
+        console.error('Error updating account:', err);
+      });
   };
 
   const handleDeleteAccount = (id: string) => {
-    const updated = accounts.filter((acc) => acc.id !== id);
-    saveAccountsToStore(updated);
+    setAccounts((prev) => prev.filter((acc) => acc.id !== id));
+
+    fetch(`/api/donation_accounts/${id}`, {
+      method: 'DELETE'
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error('Failed to delete account');
+        return res.json();
+      })
+      .catch((err) => {
+        console.error('Error deleting account:', err);
+      });
   };
 
   const handleUpdateLogo = (newLogoBase64: string | null) => {
     setLogoUrl(newLogoBase64);
-    try {
-      if (newLogoBase64) {
-        localStorage.setItem('rccg_church_logo', newLogoBase64);
-      } else {
-        localStorage.removeItem('rccg_church_logo');
-      }
-    } catch (err) {
-      console.error('Failed to write logo to local storage', err);
-      alert('Your logo image is too large. Clean its size under 2MB for storage performance.');
-    }
+    
+    fetch('/api/logo', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ logoUrl: newLogoBase64 })
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error('Failed to update logo');
+        return res.json();
+      })
+      .catch((err) => {
+        console.error('Error saving logo base64:', err);
+      });
   };
 
   const handleResetAccounts = () => {
     setLogoUrl(null);
     setAccounts(DEFAULT_ACCOUNTS);
     setBranding(DEFAULT_BRANDING);
-    try {
-      localStorage.removeItem('rccg_church_logo');
-      localStorage.setItem('rccg_donation_accounts', JSON.stringify(DEFAULT_ACCOUNTS));
-      localStorage.setItem('rccg_church_branding', JSON.stringify(DEFAULT_BRANDING));
-    } catch (err) {
-      console.error('Failed resetting to local storage', err);
-    }
+
+    fetch('/api/reset', {
+      method: 'POST'
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error('Failed to reset database');
+        return res.json();
+      })
+      .catch((err) => {
+        console.error('Error resetting databases:', err);
+      });
   };
 
   // Copy with fallback logic compatible with iframe/web sandboxes
